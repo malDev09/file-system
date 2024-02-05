@@ -243,24 +243,29 @@ export default function startFileManager(username) {
     }
   }
 
-  function calculateHash(filename) {
-    if (!filename) {
-      console.log("Invalid input: missing filename argument.");
-      return;
-    }
+async function calculateHash(fileName) {
+  try {
+    const fullPath = path.resolve(currDirectory, filePath);
+    const hash = crypto.createHash("sha256");
 
-    const filePath = path.resolve(currentDirectory, filename);
-    if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
-      const hash = zlib.createHash("sha256");
-      const fileStream = fs.createReadStream(filePath);
-      fileStream.on("data", (data) => hash.update(data));
-      fileStream.on("end", () => {
-        console.log(`Hash for file '${filePath}': ${hash.digest("hex")}`);
-      });
-    } else {
-      console.log("Invalid input: file not found.");
-    }
+    const fileStream = fs.createReadStream(fullPath);
+
+    fileStream.on("data", (data) => {
+      hash.update(data);
+    });
+
+    fileStream.on("end", () => {
+      const fileHash = hash.digest("hex");
+      console.log(`Hash '${filePath}': ${fileHash}`);
+    });
+
+    fileStream.on("error", (error) => {
+      console.log(error);
+    });
+  } catch (error) {
+    console.error("Operation failed:", error.message);
   }
+}
 
   function compressFile(sourcePath, destinationPath) {
     if (!sourcePath || !destinationPath) {
